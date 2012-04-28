@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site site="http://.*\.amazon\.com"
+    plugin="http://.*\.images-amazon\.com/images/G/01/digital/video/streaming/.*?/UnboxScreeningRoomClient\._.*?\.swf"
+                        initialState="loginPage"
+                        finalState="finished"
+                        windowWidth="1280"
+                        windowHeight="720"
+                        manualLock="true"
+                        identifier="com.plexapp.plugins.amazonvod"
+                        version="1.0">
+
+    <crop x="0" y="0" width="1024" height="800" />
+
+
+    <seekbar type="javascript">
+        <percentComplete equals="($.getPlayheadTime()/$.getMetadata().duration)*100" />
+        <bigStep minus="$.setPlayheadTime($.getPlayheadTime()-30)" plus="$.setPlayheadTime($.getPlayheadTime()+30)" />
+        <smallStep minus="$.setPlayheadTime($.getPlayheadTime()-10)" plus="$.setPlayheadTime($.getPlayheadTime()+10)" />
+        <end condition="getPlayer().getState()==&quot;COMPLETE&quot;" />
+    </seekbar>
+
+
+
+    <state name="loginPage">
+        <event>
+            <condition>
+                <frameLoaded />
+            </condition>
+            
+            <action>
+                <visit url="https://www.amazon.com/gp/aw/ya" />
+                
+                <goto state="login" />
+            </action>
+        </event>
+    </state>
+    
+    <state name="login">
+        <event>
+            <condition>
+                <title matches="^Amazon:Sign In$" />
+            </condition>
+            
+            <action>
+                <pause time="200" />
+                <run script="document.getElementsByName('email')[0].value='{$username}'" />
+                <run script="document.getElementsByName('password')[0].value='{$password}'" />
+                <run script="document.forms[0].submit()"  />
+
+                <pause time="500" />
+                
+                <goto state="reloadVideo" />
+
+            </action>
+        </event>
+        
+        <event>
+            <condition>
+                <title matches="^Amazon:Your Account$" />
+            </condition>
+            <action>
+                <goto state="reloadVideo" />
+            </action>
+        </event>
+    </state>
+
+    <state name="reloadVideo">
+        <event>
+            <condition>
+                <javascript script="true ? 1 : 0" matches="1" />
+            </condition>
+            
+            <action>            
+                <visit url="${url}" />
+                
+                <goto state="launchEmbeddedPlayer" />
+            </action>
+        </event>
+    
+    </state>
+
+    <state name="launchEmbeddedPlayer">
+        <event>
+            <condition>
+                <frameLoaded />
+            </condition>
+    
+            <action>
+                <pause time="200" />
+                <run script="eval(watchFromBeginning.toString().replace(&quot;pageType=mini&quot;, &quot;pageType=mini&amp;startState=4&quot;).replace(&quot;function watchFromBeginning()&quot;,&quot;&quot;))" />
+                <lockPlugin/>
+                <goto state="playing" />
+            </action>
+        </event>
+    </state>
+
+   
+    <state name="playing">
+        <event>
+            <condition>
+                <command name="pause"/>
+            </condition>
+            <action>
+                <run script="$.avodPause()"/>
+               
+                <goto state="paused" />
+            </action>
+        </event>
+        
+        <event>
+            <condition>
+                <command name="bigstep+" />
+            </condition>
+            <action>
+                <run script="$.setPlayheadTime($.getPlayheadTime()+30)" />
+            </action>
+        </event>
+        
+        <event>
+            <condition>
+                <command name="bigstep-" />
+            </condition>
+            <action>
+                <run script="$.setPlayheadTime($.getPlayheadTime()-30)" />
+            </action>
+        </event>
+        
+        <event>
+            <condition>
+                <command name="smallstep+" />
+            </condition>
+            <action>
+                <run script="$.setPlayheadTime($.getPlayheadTime()+10)" />
+            </action>
+        </event>
+        
+        <event>
+            <condition>
+                <command name="smallstep-" />
+            </condition>
+            <action>
+                <run script="$.setPlayheadTime($.getPlayheadTime()-10)" />
+            </action>
+        </event>
+    </state>
+    
+	<state name="paused">
+		<event>
+          <condition>
+                <command name="play"/>
+          </condition>
+          <action>
+                <run script="$.avodPlay()"/>
+                <goto state="playing" />
+          </action>
+        </event>
+	</state>
+    
+    <state name="finished">
+        <event>
+            <condition>
+                <javascript script="true ? 1 : 0" matches="1" />
+            </condition>
+            
+            <action>
+                <run script="exitScreeningRoom()" />
+                <pause time="500" />
+            </action>
+        </event>
+    </state>
+
+</site>
